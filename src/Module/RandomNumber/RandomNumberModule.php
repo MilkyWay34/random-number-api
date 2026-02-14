@@ -6,6 +6,7 @@ namespace App\Module\RandomNumber;
 
 use App\Kernel\Container\Container;
 use App\Kernel\Http\Router;
+use App\Kernel\Logger\LoggerInterface;
 use App\Kernel\Module\ModuleInterface;
 use App\Module\RandomNumber\Application\UseCase\GenerateRandomNumberUseCase;
 use App\Module\RandomNumber\Application\UseCase\GetRandomNumberUseCase;
@@ -48,6 +49,7 @@ final class RandomNumberModule implements ModuleInterface
             fn (Container $c) => new RandomNumberController(
                 $c->get(GenerateRandomNumberUseCase::class),
                 $c->get(GetRandomNumberUseCase::class),
+                $c->has(LoggerInterface::class) ? $c->get(LoggerInterface::class) : null,
             ),
         );
     }

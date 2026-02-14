@@ -8,7 +8,9 @@ use App\Kernel\Container\Container;
 use App\Kernel\Http\JsonResponse;
 use App\Kernel\Http\Request;
 use App\Kernel\Http\Router;
+use App\Kernel\Logger\LoggerInterface;
 use App\Kernel\Module\ModuleInterface;
+use Throwable;
 
 /**
  * Ядро приложения.
@@ -19,6 +21,7 @@ final class Application
 {
     private Router $router;
     private Container $container;
+    private ?LoggerInterface $logger;
 
     /** @var ModuleInterface[] */
     private array $modules;
@@ -26,11 +29,16 @@ final class Application
     /**
      * @param ModuleInterface[] $modules
      */
-    public function __construct(array $modules)
+    public function __construct(array $modules, ?LoggerInterface $logger = null)
     {
         $this->modules = $modules;
+        $this->logger = $logger;
         $this->router = new Router();
         $this->container = new Container();
+
+        if ($this->logger !== null) {
+            $this->container->set(LoggerInterface::class, fn () => $this->logger);
+        }
     }
 
     /**
@@ -41,7 +49,32 @@ final class Application
         $this->registerModules();
         $this->bootModules();
 
-        return $this->router->dispatch($request);
+        $this->logger?->info('Входящий запрос', [
+            'method' => $request->getMethod(),
+            'path' => $request->getPath(),
+        ]);
+
+        try {
+            $response = $this->router->dispatch($request);
+        } catch (Throwable $e) {
+            $this->logger?->error('Необработанное исключение', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            $response = new JsonResponse(
+                ['error' => 'Внутренняя ошибка сервера.'],
+                500,
+            );
+        }
+
+        $this->logger?->info('Ответ отправлен', [
+            'status' => $response->getStatusCode(),
+        ]);
+
+        return $response;
     }
 
     /**

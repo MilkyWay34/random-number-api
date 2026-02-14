@@ -6,6 +6,7 @@ namespace App\Module\RandomNumber\Presentation\Controller;
 
 use App\Kernel\Http\JsonResponse;
 use App\Kernel\Http\Request;
+use App\Kernel\Logger\LoggerInterface;
 use App\Module\RandomNumber\Application\UseCase\GenerateRandomNumberUseCase;
 use App\Module\RandomNumber\Application\UseCase\GetRandomNumberUseCase;
 use App\Module\RandomNumber\Domain\Exception\RandomNumberNotFoundException;
@@ -18,6 +19,7 @@ final class RandomNumberController
     public function __construct(
         private readonly GenerateRandomNumberUseCase $generateUseCase,
         private readonly GetRandomNumberUseCase $getUseCase,
+        private readonly ?LoggerInterface $logger = null,
     ) {
     }
 
@@ -27,6 +29,11 @@ final class RandomNumberController
     public function random(Request $request): JsonResponse
     {
         $dto = $this->generateUseCase->execute();
+
+        $this->logger?->info('Сгенерировано случайное число', [
+            'id' => $dto->id,
+            'number' => $dto->number,
+        ]);
 
         return new JsonResponse($dto->toArray());
     }
@@ -39,6 +46,8 @@ final class RandomNumberController
         $id = $request->getQueryParam('id');
 
         if ($id === null || $id === '') {
+            $this->logger?->warning('Запрос без обязательного параметра id');
+
             return new JsonResponse(
                 ['error' => 'Параметр "id" обязателен.'],
                 400,
@@ -48,11 +57,18 @@ final class RandomNumberController
         try {
             $dto = $this->getUseCase->execute((string) $id);
         } catch (RandomNumberNotFoundException $e) {
+            $this->logger?->warning('Число не найдено', ['id' => $id]);
+
             return new JsonResponse(
                 ['error' => $e->getMessage()],
                 404,
             );
         }
+
+        $this->logger?->info('Получено число по ID', [
+            'id' => $dto->id,
+            'number' => $dto->number,
+        ]);
 
         return new JsonResponse($dto->toArray());
     }
