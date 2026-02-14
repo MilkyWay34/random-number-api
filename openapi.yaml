@@ -1,0 +1,100 @@
+openapi: 3.0.3
+
+info:
+  title: Random Number API
+  description: REST API для генерации и получения случайных чисел.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Локальный сервер разработки
+
+paths:
+  /api/random:
+    get:
+      summary: Сгенерировать случайное число
+      description: Генерирует случайное число от 1 до 1000 и присваивает ему уникальный ID.
+      operationId: generateRandom
+      tags:
+        - RandomNumber
+      responses:
+        "200":
+          description: Успешная генерация
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RandomNumber"
+              example:
+                id: "6790706bc14b49.15837963"
+                number: 42
+
+  /api/get:
+    get:
+      summary: Получить число по ID
+      description: Возвращает ранее сгенерированное случайное число по его уникальному идентификатору.
+      operationId: getById
+      tags:
+        - RandomNumber
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Уникальный идентификатор ранее сгенерированного числа.
+          schema:
+            type: string
+          example: "6790706bc14b49.15837963"
+      responses:
+        "200":
+          description: Число найдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RandomNumber"
+              example:
+                id: "6790706bc14b49.15837963"
+                number: 42
+        "400":
+          description: Отсутствует обязательный параметр id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: 'Параметр "id" обязателен.'
+        "404":
+          description: Число с указанным ID не найдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Случайное число с ID '123' не найдено."
+
+components:
+  schemas:
+    RandomNumber:
+      type: object
+      required:
+        - id
+        - number
+      properties:
+        id:
+          type: string
+          description: Уникальный идентификатор сгенерированного числа.
+          example: "6790706bc14b49.15837963"
+        number:
+          type: integer
+          description: Сгенерированное случайное число (от 1 до 1000).
+          minimum: 1
+          maximum: 1000
+          example: 42
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Описание ошибки.
+          example: "Случайное число с ID '123' не найдено."
