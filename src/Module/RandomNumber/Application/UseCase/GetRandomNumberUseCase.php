@@ -7,7 +7,7 @@ namespace App\Module\RandomNumber\Application\UseCase;
 use App\Module\RandomNumber\Application\DTO\RandomNumberDTO;
 use App\Module\RandomNumber\Domain\Repository\RandomNumberRepositoryInterface;
 use App\Module\RandomNumber\Domain\ValueObject\RandomNumberId;
-use RuntimeException;
+use App\Module\RandomNumber\Domain\Exception\RandomNumberNotFoundException;
 
 /**
  * Сценарий использования: получить ранее сгенерированное число по ID.
@@ -20,7 +20,7 @@ final class GetRandomNumberUseCase
     }
 
     /**
-     * @throws RuntimeException если число с данным ID не найдено
+     * @throws RandomNumberNotFoundException если число с данным ID не найдено
      */
     public function execute(string $id): RandomNumberDTO
     {
@@ -28,7 +28,7 @@ final class GetRandomNumberUseCase
         $entity = $this->repository->findById($randomNumberId);
 
         if ($entity === null) {
-            throw new RuntimeException("Случайное число с ID '{$id}' не найдено.");
+            throw RandomNumberNotFoundException::withId($id);
         }
 
         return RandomNumberDTO::fromEntity($entity);

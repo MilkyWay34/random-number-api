@@ -8,7 +8,7 @@ use App\Kernel\Http\JsonResponse;
 use App\Kernel\Http\Request;
 use App\Module\RandomNumber\Application\UseCase\GenerateRandomNumberUseCase;
 use App\Module\RandomNumber\Application\UseCase\GetRandomNumberUseCase;
-use RuntimeException;
+use App\Module\RandomNumber\Domain\Exception\RandomNumberNotFoundException;
 
 /**
  * Контроллер API для работы со случайными числами.
@@ -47,7 +47,7 @@ final class RandomNumberController
 
         try {
             $dto = $this->getUseCase->execute((string) $id);
-        } catch (RuntimeException $e) {
+        } catch (RandomNumberNotFoundException $e) {
             return new JsonResponse(
                 ['error' => $e->getMessage()],
                 404,

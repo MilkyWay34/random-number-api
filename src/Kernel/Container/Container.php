@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Kernel\Container;
 
-use RuntimeException;
+use App\Kernel\Exception\ContainerException;
 
 /**
  * Простой DI-контейнер с lazy singleton-инстанцированием.
@@ -39,7 +39,7 @@ final class Container
         }
 
         if (!isset($this->factories[$id])) {
-            throw new RuntimeException("Сервис '{$id}' не зарегистрирован в контейнере.");
+            throw ContainerException::serviceNotFound($id);
         }
 
         $this->instances[$id] = ($this->factories[$id])($this);

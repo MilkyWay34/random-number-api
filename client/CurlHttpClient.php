@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Client;
 
-use RuntimeException;
+use App\Client\Exception\ApiRequestException;
 
 /**
  * HTTP-клиент на основе CURL.
@@ -26,7 +26,7 @@ final class CurlHttpClient
      * @param string $url Базовый URL
      * @param array<string, string> $params Query-параметры
      * @return array Декодированный JSON-ответ
-     * @throws RuntimeException при ошибке запроса
+     * @throws ApiRequestException при ошибке запроса
      */
     public function get(string $url, array $params = []): array
     {
@@ -52,15 +52,13 @@ final class CurlHttpClient
         curl_close($ch);
 
         if ($response === false) {
-            throw new RuntimeException("CURL ошибка: {$error}");
+            throw ApiRequestException::curlError($error);
         }
 
         $data = json_decode($response, true);
 
         if (!is_array($data)) {
-            throw new RuntimeException(
-                "Некорректный JSON-ответ (HTTP {$httpCode}): {$response}"
-            );
+            throw ApiRequestException::invalidResponse($httpCode, $response);
         }
 
         return $data;

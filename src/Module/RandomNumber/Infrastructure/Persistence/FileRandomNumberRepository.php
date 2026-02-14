@@ -7,7 +7,7 @@ namespace App\Module\RandomNumber\Infrastructure\Persistence;
 use App\Module\RandomNumber\Domain\Entity\RandomNumber;
 use App\Module\RandomNumber\Domain\Repository\RandomNumberRepositoryInterface;
 use App\Module\RandomNumber\Domain\ValueObject\RandomNumberId;
-use RuntimeException;
+use App\Module\RandomNumber\Infrastructure\Exception\StorageException;
 
 /**
  * Реализация репозитория на основе JSON-файла.
@@ -87,7 +87,7 @@ final class FileRandomNumberRepository implements RandomNumberRepositoryInterfac
         $result = file_put_contents($this->filePath, $json, LOCK_EX);
 
         if ($result === false) {
-            throw new RuntimeException("Не удалось записать данные в файл: {$this->filePath}");
+            throw StorageException::writeFailed($this->filePath);
         }
     }
 
