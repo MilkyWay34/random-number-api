@@ -16,6 +16,20 @@ $application = new Application(
     logger: $logger,
 );
 
-$request = new Request();
-$response = $application->handle($request);
-$response->send();
+try {
+    $request = new Request();
+    $response = $application->handle($request);
+    $response->send();
+} catch (\Throwable $e) {
+    $logger->error('Критическая ошибка на этапе отправки ответа', [
+        'exception' => get_class($e),
+        'message' => $e->getMessage(),
+    ]);
+
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+    }
+
+    echo '{"error":"Внутренняя ошибка сервера."}';
+}

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Kernel\Http;
 
+use JsonException;
+
 /**
  * JSON HTTP response with proper headers and status code.
  */
@@ -22,7 +24,13 @@ final class JsonResponse
     {
         http_response_code($this->statusCode);
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+
+        try {
+            echo json_encode($this->data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            http_response_code(500);
+            echo '{"error":"Внутренняя ошибка сервера."}';
+        }
     }
 
     public function getStatusCode(): int

@@ -36,6 +36,10 @@ final class CurlHttpClient
 
         $ch = curl_init();
 
+        if ($ch === false) {
+            throw ApiRequestException::curlError('Не удалось инициализировать CURL.');
+        }
+
         curl_setopt_array($ch, [
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
@@ -59,6 +63,10 @@ final class CurlHttpClient
 
         if (!is_array($data)) {
             throw ApiRequestException::invalidResponse($httpCode, $response);
+        }
+
+        if ($httpCode >= 400) {
+            throw ApiRequestException::httpError($httpCode, $data, $response);
         }
 
         return $data;

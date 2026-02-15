@@ -10,6 +10,7 @@ use App\Kernel\Logger\LoggerInterface;
 use App\Module\RandomNumber\Application\UseCase\GenerateRandomNumberUseCase;
 use App\Module\RandomNumber\Application\UseCase\GetRandomNumberUseCase;
 use App\Module\RandomNumber\Domain\Exception\RandomNumberNotFoundException;
+use InvalidArgumentException;
 
 /**
  * Контроллер API для работы со случайными числами.
@@ -45,7 +46,7 @@ final class RandomNumberController
     {
         $id = $request->getQueryParam('id');
 
-        if ($id === null || $id === '') {
+        if (!is_string($id) || $id === '') {
             $this->logger?->warning('Запрос без обязательного параметра id');
 
             return new JsonResponse(
@@ -56,11 +57,18 @@ final class RandomNumberController
 
         try {
             $dto = $this->getUseCase->execute((string) $id);
-        } catch (RandomNumberNotFoundException $e) {
-            $this->logger?->warning('Число не найдено', ['id' => $id]);
+        } catch (InvalidArgumentException) {
+            $this->logger?->warning('Неверный формат параметра id');
 
             return new JsonResponse(
-                ['error' => $e->getMessage()],
+                ['error' => 'Параметр "id" имеет неверный формат.'],
+                400,
+            );
+        } catch (RandomNumberNotFoundException) {
+            $this->logger?->warning('Число не найдено');
+
+            return new JsonResponse(
+                ['error' => 'Число не найдено.'],
                 404,
             );
         }

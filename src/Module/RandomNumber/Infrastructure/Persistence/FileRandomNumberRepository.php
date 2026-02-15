@@ -8,11 +8,12 @@ use App\Module\RandomNumber\Domain\Entity\RandomNumber;
 use App\Module\RandomNumber\Domain\Repository\RandomNumberRepositoryInterface;
 use App\Module\RandomNumber\Domain\ValueObject\RandomNumberId;
 use App\Module\RandomNumber\Infrastructure\Exception\StorageException;
+use JsonException;
 
 /**
  * Реализация репозитория на основе JSON-файла.
  *
- * Хранит данные в файле с блокировкой (LOCK_EX) для потокобезопасности.
+ * Хранит данные в файле с полной блокировкой на read-modify-write.
  */
 final class FileRandomNumberRepository implements RandomNumberRepositoryInterface
 {
@@ -26,20 +27,39 @@ final class FileRandomNumberRepository implements RandomNumberRepositoryInterfac
 
     public function save(RandomNumber $randomNumber): void
     {
-        $data = $this->readAll();
+        $handle = $this->openStorageHandle();
 
-        $id = $randomNumber->getId()->getValue();
-        $data[$id] = $randomNumber->getNumber();
+        try {
+            if (!flock($handle, LOCK_EX)) {
+                throw StorageException::writeFailed($this->filePath, 'Не удалось установить LOCK_EX.');
+            }
 
-        $this->writeAll($data);
+            $data = $this->readAllFromHandle($handle);
+            $data[$randomNumber->getId()->getValue()] = $randomNumber->getNumber();
+            $this->writeAllToHandle($handle, $data);
+        } finally {
+            flock($handle, LOCK_UN);
+            fclose($handle);
+        }
     }
 
     public function findById(RandomNumberId $id): ?RandomNumber
     {
-        $data = $this->readAll();
-        $key = $id->getValue();
+        $handle = $this->openStorageHandle();
 
-        if (!isset($data[$key])) {
+        try {
+            if (!flock($handle, LOCK_SH)) {
+                throw StorageException::readFailed($this->filePath, 'Не удалось установить LOCK_SH.');
+            }
+
+            $data = $this->readAllFromHandle($handle);
+        } finally {
+            flock($handle, LOCK_UN);
+            fclose($handle);
+        }
+
+        $key = $id->getValue();
+        if (!array_key_exists($key, $data)) {
             return null;
         }
 
@@ -50,56 +70,93 @@ final class FileRandomNumberRepository implements RandomNumberRepositoryInterfac
     }
 
     /**
-     * Прочитать все записи из файла.
-     *
      * @return array<string, int>
      */
-    private function readAll(): array
+    private function readAllFromHandle($handle): array
     {
-        if (!file_exists($this->filePath)) {
+        if (rewind($handle) === false) {
+            throw StorageException::readFailed($this->filePath, 'Не удалось перемотать файл.');
+        }
+
+        $content = stream_get_contents($handle);
+        if ($content === false) {
+            throw StorageException::readFailed($this->filePath, 'Не удалось прочитать содержимое файла.');
+        }
+
+        if (trim($content) === '') {
             return [];
         }
 
-        $content = file_get_contents($this->filePath);
-
-        if ($content === false || $content === '') {
-            return [];
+        try {
+            $data = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            throw StorageException::readFailed($this->filePath, $e->getMessage());
         }
-
-        $data = json_decode($content, true);
 
         if (!is_array($data)) {
-            return [];
+            throw StorageException::readFailed($this->filePath, 'Содержимое хранилища не является JSON-объектом.');
         }
 
         return $data;
     }
 
     /**
-     * Записать все данные в файл с блокировкой.
-     *
      * @param array<string, int> $data
      */
-    private function writeAll(array $data): void
+    private function writeAllToHandle($handle, array $data): void
     {
-        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
+        try {
+            $json = json_encode($data, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            throw StorageException::writeFailed($this->filePath, $e->getMessage());
+        }
 
-        $result = file_put_contents($this->filePath, $json, LOCK_EX);
+        if (rewind($handle) === false) {
+            throw StorageException::writeFailed($this->filePath, 'Не удалось перемотать файл.');
+        }
 
-        if ($result === false) {
-            throw StorageException::writeFailed($this->filePath);
+        if (!ftruncate($handle, 0)) {
+            throw StorageException::writeFailed($this->filePath, 'Не удалось очистить файл перед записью.');
+        }
+
+        $bytesWritten = fwrite($handle, $json);
+        if ($bytesWritten === false || $bytesWritten < strlen($json)) {
+            throw StorageException::writeFailed($this->filePath, 'Не удалось полностью записать данные.');
+        }
+
+        if (!fflush($handle)) {
+            throw StorageException::writeFailed($this->filePath, 'Не удалось выполнить flush после записи.');
         }
     }
 
-    /**
-     * Убедиться, что директория хранилища существует.
-     */
     private function ensureStorageExists(): void
     {
         $dir = dirname($this->filePath);
 
         if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+            if (!mkdir($dir, 0755, true) && !is_dir($dir)) {
+                throw StorageException::connectionFailed($this->filePath, 'Не удалось создать директорию хранилища.');
+            }
         }
+
+        if (!file_exists($this->filePath)) {
+            $result = file_put_contents($this->filePath, '{}');
+            if ($result === false) {
+                throw StorageException::connectionFailed($this->filePath, 'Не удалось создать файл хранилища.');
+            }
+        }
+    }
+
+    /**
+     * @return resource
+     */
+    private function openStorageHandle()
+    {
+        $handle = fopen($this->filePath, 'c+');
+        if ($handle === false) {
+            throw StorageException::connectionFailed($this->filePath, 'Не удалось открыть файл хранилища.');
+        }
+
+        return $handle;
     }
 }

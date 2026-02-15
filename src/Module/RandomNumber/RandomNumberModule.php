@@ -12,6 +12,7 @@ use App\Module\RandomNumber\Application\UseCase\GenerateRandomNumberUseCase;
 use App\Module\RandomNumber\Application\UseCase\GetRandomNumberUseCase;
 use App\Module\RandomNumber\Domain\Repository\RandomNumberRepositoryInterface;
 use App\Module\RandomNumber\Infrastructure\Persistence\FileRandomNumberRepository;
+use App\Module\RandomNumber\Infrastructure\Persistence\SqliteRandomNumberRepository;
 use App\Module\RandomNumber\Presentation\Controller\RandomNumberController;
 
 /**
@@ -21,13 +22,20 @@ use App\Module\RandomNumber\Presentation\Controller\RandomNumberController;
  */
 final class RandomNumberModule implements ModuleInterface
 {
-    private const STORAGE_FILE = __DIR__ . '/../../../storage/random_numbers.json';
+    private const SQLITE_STORAGE_FILE = __DIR__ . '/../../../storage/random_numbers.sqlite';
+    private const JSON_STORAGE_FILE = __DIR__ . '/../../../storage/random_numbers.json';
 
     public function register(Container $container): void
     {
         $container->set(
             RandomNumberRepositoryInterface::class,
-            fn () => new FileRandomNumberRepository(self::STORAGE_FILE),
+            function () {
+                if (\in_array('sqlite', \PDO::getAvailableDrivers(), true)) {
+                    return new SqliteRandomNumberRepository(self::SQLITE_STORAGE_FILE);
+                }
+
+                return new FileRandomNumberRepository(self::JSON_STORAGE_FILE);
+            },
         );
 
         $container->set(

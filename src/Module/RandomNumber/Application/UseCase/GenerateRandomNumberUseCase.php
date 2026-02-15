@@ -14,9 +14,6 @@ use App\Module\RandomNumber\Domain\ValueObject\RandomNumberId;
  */
 final class GenerateRandomNumberUseCase
 {
-    private const MIN_VALUE = 1;
-    private const MAX_VALUE = 1000;
-
     public function __construct(
         private readonly RandomNumberRepositoryInterface $repository,
     ) {
@@ -25,7 +22,7 @@ final class GenerateRandomNumberUseCase
     public function execute(): RandomNumberDTO
     {
         $id = RandomNumberId::generate();
-        $number = random_int(self::MIN_VALUE, self::MAX_VALUE);
+        $number = random_int(RandomNumber::MIN_NUMBER, RandomNumber::MAX_NUMBER);
 
         $entity = new RandomNumber($id, $number);
         $this->repository->save($entity);

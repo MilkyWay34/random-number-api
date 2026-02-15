@@ -25,8 +25,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/RandomNumber"
               example:
-                id: "6790706bc14b49.15837963"
+                id: "2f67c2be7c7e4da59d76ca3b80d6e6ff"
                 number: 42
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Внутренняя ошибка сервера."
 
   /api/get:
     get:
@@ -42,7 +50,8 @@ paths:
           description: Уникальный идентификатор ранее сгенерированного числа.
           schema:
             type: string
-          example: "6790706bc14b49.15837963"
+            pattern: "^(?:[a-fA-F0-9]{32}|[a-fA-F0-9]{13}\\.[0-9]{8})$"
+          example: "2f67c2be7c7e4da59d76ca3b80d6e6ff"
       responses:
         "200":
           description: Число найдено
@@ -51,16 +60,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/RandomNumber"
               example:
-                id: "6790706bc14b49.15837963"
+                id: "2f67c2be7c7e4da59d76ca3b80d6e6ff"
                 number: 42
         "400":
-          description: Отсутствует обязательный параметр id
+          description: Отсутствует обязательный параметр id или передан неверный формат
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-              example:
-                error: 'Параметр "id" обязателен.'
+              examples:
+                missingId:
+                  summary: Отсутствует id
+                  value:
+                    error: 'Параметр "id" обязателен.'
+                invalidId:
+                  summary: Неверный формат id
+                  value:
+                    error: 'Параметр "id" имеет неверный формат.'
         "404":
           description: Число с указанным ID не найдено
           content:
@@ -68,7 +84,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
               example:
-                error: "Случайное число с ID '123' не найдено."
+                error: "Число не найдено."
+        "500":
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Внутренняя ошибка сервера."
 
 components:
   schemas:
@@ -81,7 +105,8 @@ components:
         id:
           type: string
           description: Уникальный идентификатор сгенерированного числа.
-          example: "6790706bc14b49.15837963"
+          pattern: "^(?:[a-fA-F0-9]{32}|[a-fA-F0-9]{13}\\.[0-9]{8})$"
+          example: "2f67c2be7c7e4da59d76ca3b80d6e6ff"
         number:
           type: integer
           description: Сгенерированное случайное число (от 1 до 1000).
@@ -97,4 +122,4 @@ components:
         error:
           type: string
           description: Описание ошибки.
-          example: "Случайное число с ID '123' не найдено."
+          example: "Число не найдено."

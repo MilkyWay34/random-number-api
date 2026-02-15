@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Client;
 
+use App\Client\Exception\ApiRequestException;
+
 /**
  * Клиент для REST API генерации случайных чисел.
  *
@@ -24,6 +26,7 @@ final class RandomNumberApiClient
      * Сгенерировать случайное число.
      *
      * @return array{id: string, number: int}
+     * @throws ApiRequestException
      */
     public function generateRandom(): array
     {
@@ -34,6 +37,7 @@ final class RandomNumberApiClient
      * Получить ранее сгенерированное число по ID.
      *
      * @return array{id: string, number: int}
+     * @throws ApiRequestException
      */
     public function getById(string $id): array
     {
