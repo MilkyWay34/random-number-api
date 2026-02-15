@@ -52,6 +52,20 @@ GET /api/get?id=67af1234abcde
 {"id": "67af1234abcde", "number": 42}
 ```
 
+## OpenAPI-спецификация
+
+Спецификация API находится в файле:
+
+```text
+src/Module/RandomNumber/docs/openapi.yaml
+```
+
+Открыть и проверить спецификацию можно в Swagger Editor:
+
+```text
+https://editor.swagger.io/
+```
+
 ## Запуск демо-клиента
 
 В отдельном терминале (при запущенном сервере):
