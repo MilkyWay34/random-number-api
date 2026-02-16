@@ -10,7 +10,9 @@ use App\Kernel\Logger\LoggerInterface;
 use App\Kernel\Module\ModuleInterface;
 use App\Module\RandomNumber\Application\UseCase\GenerateRandomNumberUseCase;
 use App\Module\RandomNumber\Application\UseCase\GetRandomNumberUseCase;
+use App\Module\RandomNumber\Domain\Generator\RandomGeneratorInterface;
 use App\Module\RandomNumber\Domain\Repository\RandomNumberRepositoryInterface;
+use App\Module\RandomNumber\Infrastructure\Generator\IntUniformRandomGenerator;
 use App\Module\RandomNumber\Infrastructure\Persistence\FileRandomNumberRepository;
 use App\Module\RandomNumber\Infrastructure\Persistence\SqliteRandomNumberRepository;
 use App\Module\RandomNumber\Presentation\Controller\RandomNumberController;
@@ -42,6 +44,7 @@ final class RandomNumberModule implements ModuleInterface
             GenerateRandomNumberUseCase::class,
             fn (Container $c) => new GenerateRandomNumberUseCase(
                 $c->get(RandomNumberRepositoryInterface::class),
+                $c->get(RandomGeneratorInterface::class),
             ),
         );
 
@@ -59,6 +62,11 @@ final class RandomNumberModule implements ModuleInterface
                 $c->get(GetRandomNumberUseCase::class),
                 $c->has(LoggerInterface::class) ? $c->get(LoggerInterface::class) : null,
             ),
+        );
+
+        $container->set(
+            RandomGeneratorInterface::class,
+            fn () => new IntUniformRandomGenerator(),
         );
     }
 
