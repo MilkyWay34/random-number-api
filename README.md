@@ -38,18 +38,18 @@ GET /api/random
 
 Ответ:
 ```json
-{"id": "67af1234abcde", "number": 42}
+{"id": "2f67c2be7c7e4da59d76ca3b80d6e6ff", "number": 42}
 ```
 
 ### Получение числа по ID
 
 ```
-GET /api/get?id=67af1234abcde
+GET /api/get?id=2f67c2be7c7e4da59d76ca3b80d6e6ff
 ```
 
 Ответ:
 ```json
-{"id": "67af1234abcde", "number": 42}
+{"id": "2f67c2be7c7e4da59d76ca3b80d6e6ff", "number": 42}
 ```
 
 ## OpenAPI-спецификация

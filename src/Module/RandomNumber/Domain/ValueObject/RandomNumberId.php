@@ -35,16 +35,6 @@ final class RandomNumberId
         return $this->value;
     }
 
-    public function equals(self $other): bool
-    {
-        return $this->value === $other->value;
-    }
-
-    public function __toString(): string
-    {
-        return $this->value;
-    }
-
     private function isValid(string $value): bool
     {
         if ($value === '') {
