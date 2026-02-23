@@ -43,12 +43,37 @@ final class FileLogger implements LoggerInterface
     {
         $timestamp = date('Y-m-d H:i:s');
         $contextString = !empty($context)
-            ? ' ' . json_encode($context, JSON_UNESCAPED_UNICODE)
+            ? ' ' . json_encode($this->normalizeContext($context), JSON_UNESCAPED_UNICODE)
             : '';
 
         $line = "[{$timestamp}] {$level}: {$message}{$contextString}" . PHP_EOL;
 
         file_put_contents($this->filePath, $line, FILE_APPEND | LOCK_EX);
+    }
+
+    private function normalizeContext(array $context): array
+    {
+        if (isset($context['exception']) && $context['exception'] instanceof \Throwable) {
+            $e = $context['exception'];
+            $context['exception'] = [
+                'class'   => get_class($e),
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ];
+
+            if ($e->getPrevious() !== null) {
+                $prev = $e->getPrevious();
+                $context['exception']['previous'] = [
+                    'class'   => get_class($prev),
+                    'message' => $prev->getMessage(),
+                    'file'    => $prev->getFile(),
+                    'line'    => $prev->getLine(),
+                ];
+            }
+        }
+
+        return $context;
     }
 
     private function ensureDirectoryExists(): void

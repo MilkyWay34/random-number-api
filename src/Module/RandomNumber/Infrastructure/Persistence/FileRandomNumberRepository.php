@@ -90,7 +90,7 @@ final class FileRandomNumberRepository implements RandomNumberRepositoryInterfac
         try {
             $data = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
-            throw StorageException::readFailed($this->filePath, $e->getMessage());
+            throw StorageException::readFailed($this->filePath, $e->getMessage(), $e);
         }
 
         if (!is_array($data)) {
@@ -108,7 +108,7 @@ final class FileRandomNumberRepository implements RandomNumberRepositoryInterfac
         try {
             $json = json_encode($data, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
-            throw StorageException::writeFailed($this->filePath, $e->getMessage());
+            throw StorageException::writeFailed($this->filePath, $e->getMessage(), $e);
         }
 
         if (rewind($handle) === false) {

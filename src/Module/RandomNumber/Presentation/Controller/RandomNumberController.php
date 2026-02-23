@@ -9,8 +9,6 @@ use App\Kernel\Http\Request;
 use App\Kernel\Logger\LoggerInterface;
 use App\Module\RandomNumber\Application\UseCase\GenerateRandomNumberUseCase;
 use App\Module\RandomNumber\Application\UseCase\GetRandomNumberUseCase;
-use App\Module\RandomNumber\Domain\Exception\RandomNumberNotFoundException;
-use InvalidArgumentException;
 
 /**
  * Контроллер API для работы со случайными числами.
@@ -55,23 +53,7 @@ final class RandomNumberController
             );
         }
 
-        try {
-            $dto = $this->getUseCase->execute((string) $id);
-        } catch (InvalidArgumentException) {
-            $this->logger?->warning('Неверный формат параметра id');
-
-            return new JsonResponse(
-                ['error' => 'Параметр "id" имеет неверный формат.'],
-                400,
-            );
-        } catch (RandomNumberNotFoundException) {
-            $this->logger?->warning('Число не найдено');
-
-            return new JsonResponse(
-                ['error' => 'Число не найдено.'],
-                404,
-            );
-        }
+        $dto = $this->getUseCase->execute((string) $id);
 
         $this->logger?->info('Получено число по ID', [
             'id' => $dto->id,

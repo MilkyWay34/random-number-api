@@ -11,27 +11,27 @@ use RuntimeException;
  */
 final class StorageException extends RuntimeException
 {
-    public static function connectionFailed(string $filePath, ?string $reason = null): self
+    public static function connectionFailed(string $filePath, ?string $reason = null, ?\Throwable $previous = null): self
     {
-        return self::withReason("Не удалось подключиться к хранилищу: {$filePath}", $reason);
+        return self::withReason("Не удалось подключиться к хранилищу: {$filePath}", $reason, $previous);
     }
 
-    public static function readFailed(string $filePath, ?string $reason = null): self
+    public static function readFailed(string $filePath, ?string $reason = null, ?\Throwable $previous = null): self
     {
-        return self::withReason("Не удалось прочитать данные из хранилища: {$filePath}", $reason);
+        return self::withReason("Не удалось прочитать данные из хранилища: {$filePath}", $reason, $previous);
     }
 
-    public static function writeFailed(string $filePath, ?string $reason = null): self
+    public static function writeFailed(string $filePath, ?string $reason = null, ?\Throwable $previous = null): self
     {
-        return self::withReason("Не удалось записать данные в хранилище: {$filePath}", $reason);
+        return self::withReason("Не удалось записать данные в хранилище: {$filePath}", $reason, $previous);
     }
 
-    private static function withReason(string $message, ?string $reason): self
+    private static function withReason(string $message, ?string $reason, ?\Throwable $previous = null): self
     {
         if ($reason === null || $reason === '') {
-            return new self($message);
+            return new self($message, 0, $previous);
         }
 
-        return new self("{$message}. Причина: {$reason}");
+        return new self("{$message}. Причина: {$reason}", 0, $previous);
     }
 }

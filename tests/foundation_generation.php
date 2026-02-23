@@ -75,7 +75,7 @@ try {
     $thrown = false;
     try {
         $realGenerator->generate($unsupported);
-    } catch (\InvalidArgumentException) {
+    } catch (\LogicException) {
         $thrown = true;
     }
     assertTrue($thrown, 'int generator rejects unsupported float mode');

@@ -32,7 +32,7 @@ final class SqliteRandomNumberRepository implements RandomNumberRepositoryInterf
             $this->pdo->exec('PRAGMA journal_mode = WAL');
             $this->initializeSchema();
         } catch (PDOException $e) {
-            throw StorageException::connectionFailed($this->filePath, $e->getMessage());
+            throw StorageException::connectionFailed($this->filePath, $e->getMessage(), $e);
         }
     }
 
@@ -47,7 +47,7 @@ final class SqliteRandomNumberRepository implements RandomNumberRepositoryInterf
                 ':number' => $randomNumber->getNumber(),
             ]);
         } catch (PDOException $e) {
-            throw StorageException::writeFailed($this->filePath, $e->getMessage());
+            throw StorageException::writeFailed($this->filePath, $e->getMessage(), $e);
         }
     }
 
@@ -60,7 +60,7 @@ final class SqliteRandomNumberRepository implements RandomNumberRepositoryInterf
             $statement->execute([':id' => $id->getValue()]);
             $row = $statement->fetch();
         } catch (PDOException $e) {
-            throw StorageException::readFailed($this->filePath, $e->getMessage());
+            throw StorageException::readFailed($this->filePath, $e->getMessage(), $e);
         }
 
         if ($row === false) {

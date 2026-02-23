@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Kernel;
 
 use App\Kernel\Container\Container;
+use App\Kernel\Exception\NotFoundException;
 use App\Kernel\Http\JsonResponse;
 use App\Kernel\Http\Request;
 use App\Kernel\Http\Router;
@@ -56,6 +57,15 @@ final class Application
 
         try {
             $response = $this->router->dispatch($request);
+        } catch (NotFoundException $e) {
+            $this->logger?->warning($e->getMessage(), ['exception' => $e, 'path' => $request->getPath()]);
+            $response = new JsonResponse(['error' => $e->getMessage()], 404);
+        } catch (\InvalidArgumentException $e) {
+            $this->logger?->warning($e->getMessage(), ['exception' => $e, 'path' => $request->getPath()]);
+            $response = new JsonResponse(['error' => $e->getMessage()], 400);
+        } catch (\DomainException $e) {
+            $this->logger?->warning($e->getMessage(), ['exception' => $e, 'path' => $request->getPath()]);
+            $response = new JsonResponse(['error' => $e->getMessage()], 409);
         } catch (Throwable $e) {
             $this->logger?->error('Необработанное исключение', [
                 'exception' => get_class($e),
@@ -63,11 +73,7 @@ final class Application
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
             ]);
-
-            $response = new JsonResponse(
-                ['error' => 'Внутренняя ошибка сервера.'],
-                500,
-            );
+            $response = new JsonResponse(['error' => 'Внутренняя ошибка сервера.'], 500);
         }
 
         $this->logger?->info('Ответ отправлен', [
